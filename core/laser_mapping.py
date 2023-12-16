@@ -20,6 +20,10 @@ class LiDARMapper:
         self.EDGE_VOXEL_SIZE = 0.2
         self.SURFACE_VOXEL_SIZE = 0.4
 
+        self.CLOUD_DEPTH = 50
+        self.CLOUD_WIDTH = 50
+        self.CLOUD_HEIGHT = 10
+
     def append_undistorted(self, TL, cloud, edge_points, surface_points):
         if not self.init:
             self.init = True
@@ -85,12 +89,32 @@ class LiDARMapper:
                                        "mapping")
 
                 # update the global point clouds
-                self.world += \
-                    numpy2pcd(transform(T, trans_cloud))
-                self.all_edges += \
-                    numpy2pcd(transform(T, trans_edge_points))
-                self.all_surfaces += \
-                    numpy2pcd(transform(T, trans_surface_points))
+                trans_cloud = transform(T, trans_cloud)
+                trans_edge_points = transform(T, trans_edge_points)
+                trans_surface_points = transform(T, trans_surface_points)
+
+                centroid = np.mean(trans_cloud, axis=0)
+
+                # remove points that are too far away from the centroid
+                world_points = self._clip_points(
+                    np.asarray(self.world.points), centroid)
+                all_edges_points = self._clip_points(
+                    np.asarray(self.all_edges.points), centroid)
+                all_surfaces_points = self._clip_points(
+                    np.asarray(self.all_surfaces.points), centroid)
+
+                self.world = \
+                    numpy2pcd(np.vstack(
+                        [world_points, trans_cloud]
+                    ))
+                self.all_edges = \
+                    numpy2pcd(np.vstack(
+                        [all_edges_points, trans_edge_points]
+                    ))
+                self.all_surfaces = \
+                    numpy2pcd(np.vstack(
+                        [all_surfaces_points, trans_surface_points]
+                    ))
 
                 # optimize the global pose -> TW
                 self.trans_world = T @ TW
@@ -107,6 +131,17 @@ class LiDARMapper:
             downsample_pcd(self.all_surfaces, self.SURFACE_VOXEL_SIZE)
 
         return self.world
+
+    def _clip_points(self, points, centroid):
+        points = points[
+            (points[:, 0] >= centroid[0] - self.CLOUD_DEPTH)
+            & (points[:, 0] <= centroid[0] + self.CLOUD_DEPTH)
+            & (points[:, 1] >= centroid[1] - self.CLOUD_WIDTH)
+            & (points[:, 1] <= centroid[1] + self.CLOUD_WIDTH)
+            & (points[:, 2] >= centroid[2] - self.CLOUD_HEIGHT)
+            & (points[:, 2] <= centroid[2] + self.CLOUD_HEIGHT)
+        ]
+        return points
 
     def extract_from_edge(self, pcd):
         if not isinstance(pcd, o3d.geometry.PointCloud):
