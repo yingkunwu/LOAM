@@ -22,6 +22,7 @@ class OdometryEstimator:
         print("Feature Extraction:")
         sharp_points, less_sharp_points, flat_points, less_flat_points = \
             self.feature_extractor.extract(pcd, scan_start, scan_end)
+
         print("    Sharp count: {:5g}, Less sharp count: {:5g}"
               .format(len(sharp_points), len(less_sharp_points)))
         print("    Flat count: {:5g}, Less flat count: {:5g}"

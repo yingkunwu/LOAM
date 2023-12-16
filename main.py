@@ -19,13 +19,16 @@ if __name__ == '__main__':
     lidar_mapper = LiDARMapper()
 
     for idx, (pcd, scan_start, scan_end) in enumerate(loader):
-
+        print("========================================"
+              "========================================")
+        print("Processing Frame:", idx)
+        print("----------------------------------------"
+              "----------------------------------------")
         T, less_sharp_points, less_flat_points = \
             odometry_estimator.estimate(pcd, scan_start, scan_end)
         world = lidar_mapper.append_undistorted(
             T, pcd, less_sharp_points, less_flat_points)
+        print("========================================"
+              "========================================")
 
         print(np.asarray(world.points).shape)
-        if idx == 20:
-            visualize(world)
-            exit(1)
