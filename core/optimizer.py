@@ -57,12 +57,13 @@ class LOAMOptimizer:
         nu = np.cross(aligned_edges - self.edge_factors[1],
                       aligned_edges - self.edge_factors[2])
         de = self.edge_factors[1] - self.edge_factors[2]
-        edge_resid = np.linalg.norm(nu, axis=1) / np.linalg.norm(de, axis=1)
+        edge_resid = \
+            np.linalg.norm(nu, axis=1) / (np.linalg.norm(de, axis=1) + 1e-15)
 
         # Compute the distance from points to plane
         normal = np.cross(self.surface_factors[1] - self.surface_factors[2],
                           self.surface_factors[1] - self.surface_factors[3])
-        normal /= np.linalg.norm(normal, axis=1, keepdims=True)
+        normal /= (np.linalg.norm(normal, axis=1, keepdims=True) + 1e-15)
         dh = matrix_dot_product(aligned_surfaces - self.surface_factors[1],
                                 normal)
         surface_resid = np.abs(dh)
@@ -82,7 +83,8 @@ class LOAMOptimizer:
         nu = np.cross(aligned_edges - self.edge_factors[1],
                       aligned_edges - self.edge_factors[2])
         de = self.edge_factors[1] - self.edge_factors[2]
-        edge_resid = np.linalg.norm(nu, axis=1) / np.linalg.norm(de, axis=1)
+        edge_resid = \
+            np.linalg.norm(nu, axis=1) / (np.linalg.norm(de, axis=1) + 1e-15)
 
         # Compute the distance from points to plane
         # aligned_surfaces -> (x, y, z)
