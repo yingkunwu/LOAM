@@ -47,6 +47,8 @@ class LiDARMapper:
             edges_kdtree = o3d.geometry.KDTreeFlann(self.all_edges)
             surfaces_kdtree = o3d.geometry.KDTreeFlann(self.all_surfaces)
 
+            print("Find Correspondences for Mapping:")
+
             # search for points on edge lines in the surrounded points set
             edges, edge_A, edge_B = [], [], []
             for ind in range(len(edge_points)):
@@ -77,6 +79,11 @@ class LiDARMapper:
                         surfaces.append(point)
                         surface_A.append(coeff[:3])
                         surface_B.append(coeff[3])
+
+            print("    edges   : {:5g}, edge_A   : {:5g}, edge_B   : {:5g},"
+                  .format(len(edges), len(edge_A), len(edge_B)))
+            print("    surfaces: {:5g}, surface_A: {:5g}, surface_B: {:5g},"
+                  .format(len(surfaces), len(surface_A), len(surface_B)))
 
             if len(edges) > 50 and len(surfaces) > 50:
                 edge_factors = (np.vstack(edges),

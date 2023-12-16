@@ -19,18 +19,19 @@ class OdometryEstimator:
         self.SCAN_VICINITY = 2.5
 
     def estimate(self, pcd, scan_start, scan_end):
+        print("Feature Extraction:")
         sharp_points, less_sharp_points, flat_points, less_flat_points = \
             self.feature_extractor.extract(pcd, scan_start, scan_end)
-
-        print('Sharp count: ', len(sharp_points))
-        print('Less sharp count: ', len(less_sharp_points))
-        print('Flat count: ', len(flat_points))
-        print('Less flat count: ', len(less_flat_points))
+        print("    Sharp count: {:5g}, Less sharp count: {:5g}"
+              .format(len(sharp_points), len(less_sharp_points)))
+        print("    Flat count: {:5g}, Less flat count: {:5g}"
+              .format(len(flat_points), len(less_flat_points)))
 
         if not self.inited:
             self.inited = True
             T = np.eye(4)
         else:
+            print("Find Correspondences for Odometry:")
             edge_corresp = self.find_edge_correspondences(sharp_points)
             surface_corresp = self.find_surface_correspondences(flat_points)
 
@@ -96,13 +97,12 @@ class OdometryEstimator:
                     edge_1.append(last_less_sharp_points[closest_ind])
                     edge_2.append(last_less_sharp_points[min_ind2])
 
+        print("    edge_points   : {:4g}, edge_1   : {:4g}, edge_2   : {:4g},"
+              .format(len(edge_points), len(edge_1), len(edge_2)))
+
         edge_points = np.asarray(edge_points)
         edge_1 = np.asarray(edge_1)
         edge_2 = np.asarray(edge_2)
-
-        print('edge_points: ', edge_points.shape[0])
-        print('edge_1: ', edge_1.shape[0])
-        print('edge_2: ', edge_2.shape[0])
 
         return edge_points, edge_1, edge_2
 
@@ -165,14 +165,14 @@ class OdometryEstimator:
                     surface_2.append(last_less_flat_points[min_ind2])
                     surface_3.append(last_less_flat_points[min_ind3])
 
+        print("    surface_points: {:4g}, surface_1: {:4g}, surface_2: {:4g}, "
+              "surface_3: {:4g}"
+              .format(len(surface_points), len(surface_1), len(surface_2),
+                      len(surface_3)))
+
         surface_points = np.asarray(surface_points)
         surface_1 = np.asarray(surface_1)
         surface_2 = np.asarray(surface_2)
         surface_3 = np.asarray(surface_3)
-
-        print('surface_points: ', surface_points.shape[0])
-        print('surface_1: ', surface_1.shape[0])
-        print('surface_2: ', surface_2.shape[0])
-        print('surface_3: ', surface_3.shape[0])
 
         return surface_points, surface_1, surface_2, surface_3

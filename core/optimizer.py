@@ -14,18 +14,18 @@ class LOAMOptimizer:
         self.edge_factors = None
         self.surface_factors = None
 
-    def run(self, edge_factors, surface_factors, type):
+    def run(self, edge_factors, surface_factors, action):
         self.edge_factors = edge_factors
         self.surface_factors = surface_factors
 
-        if type == "odometry":
+        if action == "odometry":
             assert len(self.edge_factors) == 3, \
                 "Invalid number of edge factors"
             assert len(self.surface_factors) == 4, \
                 "Invalid number of surface factors"
 
             resid_function = self.resid_function_1
-        elif type == "mapping":
+        elif action == "mapping":
             assert len(self.edge_factors) == 3, \
                 "Invalid number of edge factors"
             assert len(self.surface_factors) == 3, \
@@ -33,13 +33,14 @@ class LOAMOptimizer:
 
             resid_function = self.resid_function_2
         else:
-            raise NotImplementedError("Invalid type")
+            raise NotImplementedError("Invalid action")
 
         init_pose = np.array([0, 0, 0, 0, 0, 0], dtype=np.float32)
         opt_solution = least_squares(resid_function, init_pose,
                                      loss=self.loss, xtol=self.tolerance)
         T = get_transform_mat(opt_solution.x)
-        print('ERROR', np.mean(resid_function(opt_solution.x)))
+        print('    {} optimization error: {}\n'
+              .format(action, np.mean(resid_function(opt_solution.x))))
 
         del self.edge_factors
         del self.surface_factors
