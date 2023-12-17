@@ -11,6 +11,9 @@ class LoadKITTIData:
 
         self.frame_idx = list(range(len(self.pcds_list)))
 
+        pose_path = os.path.join(data_path, 'odometry', 'poses')
+        self.poses = self._load_poses(pose_path, sequence)
+
         # Number of laser scans per frame
         self.NUM_SCANS = 64
         # Laser scan period
@@ -41,7 +44,7 @@ class LoadKITTIData:
         rel_time = self._get_rel_time(pcd)
 
         # append scan ids and relative time info to each point
-        scan_info = scan_ids + rel_time
+        scan_info = scan_ids + self.SCAN_PERIOD * rel_time
         pcd = np.hstack((pcd, scan_info[:, np.newaxis]))
 
         # remove unreliable points
@@ -60,7 +63,35 @@ class LoadKITTIData:
         sorted_ind = np.argsort(scan_ids, kind='stable')
         pcd = pcd[sorted_ind]
 
-        return pcd, scan_start, scan_end
+        return pcd, scan_start, scan_end, self.poses[idx]
+
+    def _load_poses(self, pose_file, sequence):
+        R_transform = np.array([
+            [0, 0, 1, 0], [-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 0, 1]
+        ])
+
+        pose_file = os.path.join(pose_file, sequence + '.txt')
+
+        # Read and parse the poses
+        poses = []
+        try:
+            with open(pose_file, 'r') as f:
+                lines = f.readlines()
+                if self.frame_idx is not None:
+                    lines = [lines[i] for i in self.frame_idx]
+
+                for line in lines:
+                    T = np.fromstring(line, dtype=float, sep=' ')
+                    T = T.reshape(3, 4)
+                    T = np.vstack((T, [0, 0, 0, 1]))
+                    T = R_transform @ T
+                    poses.append(T)
+
+        except FileNotFoundError:
+            print('Ground truth poses are not available for sequence ' +
+                  self.sequence + '.')
+
+        return poses
 
     def _remove_unreliable_points(self, pcd, scan_ids):
         # remove points that are too close to the lidar

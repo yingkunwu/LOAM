@@ -24,6 +24,10 @@ class LiDARMapper:
         self.CLOUD_WIDTH = 50
         self.CLOUD_HEIGHT = 10
 
+    def get_pose(self):
+        curr_pose = self.trans_world.copy()
+        return curr_pose
+
     def append_undistorted(self, TL, cloud, edge_points, surface_points):
         if not self.init:
             self.init = True
@@ -31,7 +35,7 @@ class LiDARMapper:
             self.all_edges = numpy2pcd(edge_points)
             self.all_surfaces = numpy2pcd(surface_points)
         else:
-            TW = self.trans_world @ TL
+            TW = TL @ self.trans_world
 
             edge_points = downsample_points(
                 edge_points[:, :3], self.EDGE_VOXEL_SIZE)
