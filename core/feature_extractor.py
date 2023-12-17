@@ -1,5 +1,7 @@
 import numpy as np
 
+from .utils import downsample_points
+
 
 class FeatureExtractor:
     def __init__(self):
@@ -106,6 +108,8 @@ class FeatureExtractor:
         keypoints_less_sharp = np.asarray(keypoints_less_sharp)
         keypoints_flat = np.asarray(keypoints_flat)
         keypoints_less_flat = np.asarray(keypoints_less_flat)
+
+        keypoints_less_flat = downsample_points(keypoints_less_flat, 0.2)
 
         return keypoints_sharp, keypoints_less_sharp, \
             keypoints_flat, keypoints_less_flat

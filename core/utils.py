@@ -10,14 +10,11 @@ def numpy2pcd(points):
 
 
 def get_transform_mat(pose):
-    r = Rotation.from_euler('zyx', pose[3:], degrees=False)
-    r = r.as_matrix()
-
-    t = pose[:3]
+    r = Rotation.from_quat(pose[:4])
 
     trans_mat = np.eye(4)
-    trans_mat[:3, :3] = r
-    trans_mat[:3, 3] = t
+    trans_mat[:3, :3] = r.as_matrix()
+    trans_mat[:3, 3] = pose[4:]
 
     return trans_mat
 
@@ -52,11 +49,21 @@ def matrix_dot_product(A, B):
 
 
 def downsample_points(points, voxel_size):
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(points)
-    downpcd = pcd.voxel_down_sample(voxel_size)
+    pcd = numpy2pcd(points)
 
-    return np.asarray(downpcd.points)
+    if points.shape[1] > 3:
+        max_bound = pcd.get_max_bound() + voxel_size * 0.5
+        min_bound = pcd.get_min_bound() - voxel_size * 0.5
+        out = pcd.voxel_down_sample_and_trace(
+            voxel_size, min_bound, max_bound, False)
+        index_ds = [cubic_index[0] for cubic_index in out[2]]
+        points = points[index_ds, :]
+
+    else:
+        downpcd = pcd.voxel_down_sample(voxel_size)
+        points = np.asarray(downpcd.points)
+
+    return points
 
 
 def downsample_pcd(pcd, voxel_size):

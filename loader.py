@@ -66,6 +66,7 @@ class LoadKITTIData:
         return pcd, scan_start, scan_end, self.poses[idx]
 
     def _load_poses(self, pose_file, sequence):
+        # TODO: Still very confused about why R_transform is needed
         R_transform = np.array([
             [0, 0, 1, 0], [-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 0, 1]
         ])
@@ -85,6 +86,8 @@ class LoadKITTIData:
                     T = T.reshape(3, 4)
                     T = np.vstack((T, [0, 0, 0, 1]))
                     T = R_transform @ T
+                    T = R_transform @ T @ np.linalg.inv(R_transform)
+
                     poses.append(T)
 
         except FileNotFoundError:

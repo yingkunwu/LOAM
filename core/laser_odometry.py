@@ -89,6 +89,7 @@ class OdometryEstimator:
                             closest_scan_id - self.SCAN_VICINITY:
                         break
 
+                    point_sq_dist = point_sq_dist_list[j]
                     if point_sq_dist < min_sq_dist2:
                         min_sq_dist2 = point_sq_dist
                         min_ind2 = j
@@ -152,6 +153,7 @@ class OdometryEstimator:
                             closest_scan_id - self.SCAN_VICINITY:
                         break
 
+                    point_sq_dist = point_sq_dist_list[j]
                     if self.last_less_flat_scan[j] >= \
                             closest_scan_id and point_sq_dist < min_sq_dist2:
                         min_sq_dist2 = point_sq_dist

@@ -35,7 +35,8 @@ class LOAMOptimizer:
         else:
             raise NotImplementedError("Invalid action")
 
-        init_pose = np.array([0, 0, 0, 0, 0, 0], dtype=np.float32)
+        # initialize pose in quaternion form
+        init_pose = np.array([0, 0, 0, 1, 0, 0, 0], dtype=np.float32)
         opt_solution = least_squares(resid_function, init_pose,
                                      loss=self.loss, xtol=self.tolerance)
         T = get_transform_mat(opt_solution.x)

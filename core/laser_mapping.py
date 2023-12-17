@@ -16,7 +16,7 @@ class LiDARMapper:
         self.optimizer = LOAMOptimizer()
 
         self.COVARIANCE_CNT = 5
-        self.WORLD_VOXEL_SIZE = 0.1
+        self.WORLD_VOXEL_SIZE = 0.2
         self.EDGE_VOXEL_SIZE = 0.2
         self.SURFACE_VOXEL_SIZE = 0.4
 

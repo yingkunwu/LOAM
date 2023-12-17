@@ -1,5 +1,6 @@
 import open3d as o3d
 import numpy as np
+import matplotlib.pyplot as plt
 
 from loader import LoadKITTIData
 from core.laser_odometry import OdometryEstimator
@@ -18,17 +19,46 @@ if __name__ == '__main__':
     odometry_estimator = OdometryEstimator()
     lidar_mapper = LiDARMapper()
 
-    for idx, (pcd, scan_start, scan_end) in enumerate(loader):
+    targ_x, targ_y = [], []
+    pred_x, pred_y = [], []
+    world = None
+
+    for idx, (pcd, scan_start, scan_end, pose) in enumerate(loader):
+        if idx == 3:
+            # visualize(world)
+            break
+
+        # TODO: No sure why the x and y are swapped
+        targ_x.append(-pose[1, -1])
+        targ_y.append(pose[0, -1])
+
         print("========================================"
               "========================================")
         print("Processing Frame:", idx)
         print("----------------------------------------"
               "----------------------------------------")
+
         T, less_sharp_points, less_flat_points = \
             odometry_estimator.estimate(pcd, scan_start, scan_end)
         world = lidar_mapper.append_undistorted(
             T, pcd, less_sharp_points, less_flat_points)
+
+        pred_pose = lidar_mapper.get_pose()
+        pred_x.append(pred_pose[0, -1])
+        pred_y.append(pred_pose[1, -1])
+
+        print("Number of points in world LiDAR map:",
+              np.asarray(world.points).shape)
+
         print("========================================"
               "========================================")
 
-        print(np.asarray(world.points).shape)
+    # Plot the pose on the xy-plane
+    plt.plot(targ_x, targ_y, label='target')
+    plt.plot(pred_x, pred_y, label='estimated')
+    plt.xlabel('x (m)')
+    plt.ylabel('y (m)')
+    plt.legend()
+    plt.title('LiDAR Odometry')
+    plt.savefig('result.png')
+    plt.close()
