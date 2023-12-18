@@ -24,13 +24,12 @@ if __name__ == '__main__':
     world = None
 
     for idx, (pcd, scan_start, scan_end, pose) in enumerate(loader):
-        if idx == 3:
-            # visualize(world)
+        if idx == 150:
+            visualize(world)
             break
 
-        # TODO: No sure why the x and y are swapped
-        targ_x.append(-pose[1, -1])
-        targ_y.append(pose[0, -1])
+        targ_x.append(pose[0, -1])
+        targ_y.append(pose[1, -1])
 
         print("========================================"
               "========================================")

@@ -81,14 +81,22 @@ class LoadKITTIData:
                 if self.frame_idx is not None:
                     lines = [lines[i] for i in self.frame_idx]
 
+                # read ground truth poses from file
                 for line in lines:
-                    T = np.fromstring(line, dtype=float, sep=' ')
+                    T = np.fromstring(line, dtype=np.float32, sep=' ')
                     T = T.reshape(3, 4)
                     T = np.vstack((T, [0, 0, 0, 1]))
-                    T = R_transform @ T
-                    T = R_transform @ T @ np.linalg.inv(R_transform)
 
                     poses.append(T)
+
+                # compensate poses and convert poses to the same coordinate
+                # system as LiDAR points
+                first_pose = poses[0]
+                for i, T in enumerate(poses):
+                    T = np.linalg.inv(first_pose) @ T
+                    T = R_transform @ T @ np.linalg.inv(R_transform)
+
+                    poses[i] = T
 
         except FileNotFoundError:
             print('Ground truth poses are not available for sequence ' +
