@@ -92,10 +92,11 @@ class LOAMOptimizer:
         # aligned_surfaces -> (x, y, z)
         # self.surface_factors[1] -> (a, b, c)
         # self.surface_factors[2] -> (d, )
-        # surface_resid -> ax + by + cz + d
-        surface_resid = \
+        # surface_resid -> |ax + by + cz + d|
+        du = \
             matrix_dot_product(aligned_surfaces, self.surface_factors[1]) \
             + self.surface_factors[2].reshape((-1,))
+        surface_resid = np.abs(du)
 
         resid = np.concatenate((edge_resid, surface_resid))
         return resid
