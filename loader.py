@@ -5,21 +5,27 @@ import numpy as np
 class LoadKITTIData:
     def __init__(self, data_path, sequence):
         self.folder_path = os.path.join(
-            data_path, 'odometry', 'sequences', sequence, 'velodyne')
+            data_path, 'dataset', 'sequences', sequence, 'velodyne')
         self.pcds_list = os.listdir(self.folder_path)
         self.pcds_list.sort()
 
         self.frame_idx = list(range(len(self.pcds_list)))
 
-        pose_path = os.path.join(data_path, 'odometry', 'poses')
-        self.poses = self._load_poses(pose_path, sequence)
+        calib_path = os.path.join(
+            data_path, 'dataset', 'sequences', sequence, "calib.txt")
+        self.calibration = self._load_calib_file(calib_path)
+
+        pose_path = os.path.join(
+            data_path, 'dataset', 'poses', sequence + '.txt')
+        self.poses = self._load_poses(pose_path)
 
         # Number of laser scans per frame
         self.NUM_SCANS = 64
         # Laser scan period
         self.SCAN_PERIOD = 0.1
         # Distance threshold to remove close points
-        self.DISTANCE_THRES = 4
+        self.MIN_DISTANCE_THRES = 2.5
+        self.MAX_DISTANCE_THRES = 120
 
     def __iter__(self):
         self.count = 0
@@ -34,8 +40,9 @@ class LoadKITTIData:
         idx = self.frame_idx[self.count]
         self.count += 1
 
-        path = os.path.join(self.folder_path, self.pcds_list[idx])
-        pcd = np.fromfile(path, dtype=np.float32).reshape(-1, 4)[:, :3]
+        # load point cloud data
+        lidar_path = os.path.join(self.folder_path, self.pcds_list[idx])
+        pcd = self._load_pcd(lidar_path)
 
         # generate scan ids for each point based on pitch angle
         scan_ids = self._get_scan_ids(pcd)
@@ -65,13 +72,13 @@ class LoadKITTIData:
 
         return pcd, scan_start, scan_end, self.poses[idx]
 
-    def _load_poses(self, pose_file, sequence):
-        # TODO: Still very confused about why R_transform is needed
-        R_transform = np.array([
-            [0, 0, 1, 0], [-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 0, 1]
-        ])
+    def _load_pcd(self, path):
+        points = np.fromfile(path, dtype=np.float32).reshape((-1, 4))
+        return points[:, :3]
 
-        pose_file = os.path.join(pose_file, sequence + '.txt')
+    def _load_poses(self, pose_file):
+        Tr = self.calibration["Tr"].reshape(3, 4)
+        Tr = np.vstack((Tr, [0, 0, 0, 1]))
 
         # Read and parse the poses
         poses = []
@@ -94,7 +101,7 @@ class LoadKITTIData:
                 first_pose = poses[0]
                 for i, T in enumerate(poses):
                     T = np.linalg.inv(first_pose) @ T
-                    T = R_transform @ T @ np.linalg.inv(R_transform)
+                    T = np.linalg.inv(Tr) @ T @ Tr
 
                     poses[i] = T
 
@@ -104,10 +111,30 @@ class LoadKITTIData:
 
         return poses
 
+    def _load_calib_file(self, file_path):
+        calib_dict = {}
+        with open(file_path, "r") as calib_file:
+            for line in calib_file.readlines():
+                tokens = line.split(" ")
+                if tokens[0] == "calib_time:":
+                    continue
+                # Only read with float data
+                if len(tokens) > 0:
+                    values = [float(token) for token in tokens[1:]]
+                    values = np.array(values, dtype=np.float32)
+
+                    # The format in KITTI's file is <key>:<f1> <f2> <f3> ...\n
+                    # -> Remove the ':'
+                    key = tokens[0][:-1]
+                    calib_dict[key] = values
+        return calib_dict
+
     def _remove_unreliable_points(self, pcd, scan_ids):
         # remove points that are too close to the lidar
         dists = np.sum(pcd[:, :3] ** 2, axis=1)
-        valid_mask1 = dists > self.DISTANCE_THRES ** 2
+        valid_mask1 = \
+            (dists > self.MIN_DISTANCE_THRES ** 2) \
+            & (dists < self.MAX_DISTANCE_THRES ** 2)
 
         # only keep points with scan id in a reasonable range [0, NUM_SCANS)
         valid_mask2 = np.logical_and(scan_ids >= 0, scan_ids < self.NUM_SCANS)
