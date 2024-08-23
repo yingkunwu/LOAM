@@ -51,20 +51,24 @@ def matrix_dot_product(A, B):
 def downsample_points(points, voxel_size):
     pcd = numpy2pcd(points)
 
-    if points.shape[1] > 3:
-        max_bound = pcd.get_max_bound() + voxel_size * 0.5
-        min_bound = pcd.get_min_bound() - voxel_size * 0.5
-        out = pcd.voxel_down_sample_and_trace(
-            voxel_size, min_bound, max_bound, False)
-        index_ds = [cubic_index[0] for cubic_index in out[2]]
-        points = points[index_ds, :]
-
-    else:
-        downpcd = pcd.voxel_down_sample(voxel_size)
-        points = np.asarray(downpcd.points)
+    max_bound = pcd.get_max_bound() + voxel_size * 0.5
+    min_bound = pcd.get_min_bound() - voxel_size * 0.5
+    out = pcd.voxel_down_sample_and_trace(
+        voxel_size, min_bound, max_bound, False)
+    index_ds = [cubic_index[0] for cubic_index in out[2]]
+    points = points[index_ds, :]
 
     return points
 
 
 def downsample_pcd(pcd, voxel_size):
-    return pcd.voxel_down_sample(voxel_size)
+    points = np.asarray(pcd.points)
+
+    max_bound = pcd.get_max_bound() + voxel_size * 0.5
+    min_bound = pcd.get_min_bound() - voxel_size * 0.5
+    out = pcd.voxel_down_sample_and_trace(
+        voxel_size, min_bound, max_bound, False)
+    index_ds = [cubic_index[0] for cubic_index in out[2]]
+    points = points[index_ds, :]
+
+    return numpy2pcd(points)

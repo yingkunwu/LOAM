@@ -1,10 +1,14 @@
 import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+import argparse
 
 from loader import LoadKITTIData
 from core.laser_odometry import OdometryEstimator
 from core.laser_mapping import LiDARMapper
+
+matplotlib.use("Agg")
 
 
 def visualize(pcd):
@@ -12,9 +16,14 @@ def visualize(pcd):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sequence", type=str,
+                        default="04",
+                        help="Which sequence to use for estimation")
+    args = parser.parse_args()
+
     data_path = 'data/KITTI/'
-    sequence = '00'
-    loader = LoadKITTIData(data_path, sequence)
+    loader = LoadKITTIData(data_path, args.sequence)
 
     odometry_estimator = OdometryEstimator()
     lidar_mapper = LiDARMapper()
@@ -24,9 +33,11 @@ if __name__ == '__main__':
     world = None
 
     for idx, (pcd, scan_start, scan_end, pose) in enumerate(loader):
-        if idx == 150:
-            visualize(world)
-            break
+        # if idx <= 70:
+        #     continue
+        # if idx == 100:
+        #     visualize(world)
+        #     break
 
         targ_x.append(pose[0, -1])
         targ_y.append(pose[1, -1])
@@ -51,13 +62,13 @@ if __name__ == '__main__':
 
         print("========================================"
               "========================================")
+        # visualize(world)
 
     # Plot the pose on the xy-plane
-    plt.plot(targ_x, targ_y, label='target')
+    plt.plot(targ_x, targ_y, label='ground trutn')
     plt.plot(pred_x, pred_y, label='estimated')
     plt.xlabel('x (m)')
     plt.ylabel('y (m)')
     plt.legend()
-    plt.title('LiDAR Odometry')
-    plt.savefig('result.png')
-    plt.close()
+    plt.title(f'LiDAR Odometry for scene {args.sequence}')
+    plt.savefig(f'result_{args.sequence}.png')

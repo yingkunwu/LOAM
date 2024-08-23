@@ -35,7 +35,7 @@ class LiDARMapper:
             self.all_edges = numpy2pcd(edge_points)
             self.all_surfaces = numpy2pcd(surface_points)
         else:
-            TW = TL @ self.trans_world
+            TW = self.trans_world @ TL
 
             edge_points = downsample_points(
                 edge_points[:, :3], self.EDGE_VOXEL_SIZE)
@@ -127,22 +127,23 @@ class LiDARMapper:
                         [all_surfaces_points, trans_surface_points]
                     ))
 
+                # downsample point clouds
+                self.world = \
+                    downsample_pcd(self.world, self.WORLD_VOXEL_SIZE)
+                self.all_edges = \
+                    downsample_pcd(self.all_edges, self.EDGE_VOXEL_SIZE)
+                self.all_surfaces = \
+                    downsample_pcd(self.all_surfaces, self.SURFACE_VOXEL_SIZE)
+
                 # optimize the global pose -> TW
                 self.trans_world = T @ TW
             else:
                 print("Not enough points for mapping")
                 self.trans_world = TW
 
-        # downsample point clouds
-        self.world = \
-            downsample_pcd(self.world, self.WORLD_VOXEL_SIZE)
-        self.all_edges = \
-            downsample_pcd(self.all_edges, self.EDGE_VOXEL_SIZE)
-        self.all_surfaces = \
-            downsample_pcd(self.all_surfaces, self.SURFACE_VOXEL_SIZE)
-
         return self.world
 
+    # TODO: improve this function
     def _clip_points(self, points, centroid):
         points = points[
             (points[:, 0] >= centroid[0] - self.CLOUD_DEPTH)

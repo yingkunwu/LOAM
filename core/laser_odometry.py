@@ -3,7 +3,7 @@ import open3d as o3d
 
 from .feature_extractor import FeatureExtractor
 from .optimizer import LOAMOptimizer
-from .utils import numpy2pcd
+from .utils import numpy2pcd, transform
 
 
 class OdometryEstimator:
@@ -30,13 +30,19 @@ class OdometryEstimator:
 
         if not self.inited:
             self.inited = True
-            T = np.eye(4)
+            T_best = np.eye(4)
         else:
             print("Find Correspondences for Odometry:")
-            edge_corresp = self.find_edge_correspondences(sharp_points)
-            surface_corresp = self.find_surface_correspondences(flat_points)
+            T_best = np.eye(4)
+            for i in range(3):
+                edge_corresp = self.find_edge_correspondences(sharp_points)
+                surface_corresp = self.find_surface_correspondences(flat_points)
 
-            T = self.optimizer.run(edge_corresp, surface_corresp, "odometry")
+                T = self.optimizer.run(edge_corresp, surface_corresp, "odometry")
+
+                sharp_points[:, :3] = transform(T, sharp_points[:, :3])
+                flat_points[:, :3] = transform(T, flat_points[:, :3])
+                T_best = T @ T_best
 
         self.last_less_sharp = numpy2pcd(less_sharp_points.copy())
         self.last_less_flat = numpy2pcd(less_flat_points.copy())
@@ -44,7 +50,7 @@ class OdometryEstimator:
         self.last_less_sharp_scan = less_sharp_points[:, 3].copy()
         self.last_less_flat_scan = less_flat_points[:, 3].copy()
 
-        return T, less_sharp_points, less_flat_points
+        return T_best, less_sharp_points, less_flat_points
 
     def find_edge_correspondences(self, sharp_points):
         edge_points = []
