@@ -33,11 +33,6 @@ if __name__ == '__main__':
     world = None
 
     for idx, (pcd, scan_start, scan_end, pose) in enumerate(loader):
-        # if idx <= 70:
-        #     continue
-        # if idx == 100:
-        #     visualize(world)
-        #     break
 
         targ_x.append(pose[0, -1])
         targ_y.append(pose[1, -1])
