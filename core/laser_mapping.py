@@ -35,7 +35,7 @@ class LiDARMapper:
             self.all_edges = numpy2pcd(edge_points)
             self.all_surfaces = numpy2pcd(surface_points)
         else:
-            TW = self.trans_world @ TL
+            TW = TL @ self.trans_world
 
             edge_points = downsample_points(
                 edge_points[:, :3], self.EDGE_VOXEL_SIZE)

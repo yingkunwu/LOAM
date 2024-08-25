@@ -77,8 +77,9 @@ class LoadKITTIData:
         return points[:, :3]
 
     def _load_poses(self, pose_file):
-        Tr = self.calibration["Tr"].reshape(3, 4)
-        Tr = np.vstack((Tr, [0, 0, 0, 1]))
+        # LiDAR to Camera
+        T_lidar_to_cam = self.calibration["Tr"].reshape(3, 4)
+        T_lidar_to_cam = np.vstack((T_lidar_to_cam, [0, 0, 0, 1]))
 
         # Read and parse the poses
         poses = []
@@ -101,7 +102,8 @@ class LoadKITTIData:
                 first_pose = poses[0]
                 for i, T in enumerate(poses):
                     T = np.linalg.inv(first_pose) @ T
-                    T = np.linalg.inv(Tr) @ T @ Tr
+                    # transform to the same coordinate system as LiDAR points
+                    T = np.linalg.inv(T_lidar_to_cam) @ T @ T_lidar_to_cam
 
                     poses[i] = T
 
@@ -178,6 +180,7 @@ class LoadKITTIData:
     def _get_scan_ids(self, pcd):
         # calculate pitch of each lidar point
         depth = np.linalg.norm(pcd, axis=1)
+        # calculate pitch angle from arcsin((0,0,z)/(x,y,z))
         pitch = np.arcsin(pcd[:, 2] / depth)
 
         # LiDAR vfov:
