@@ -35,7 +35,7 @@ class LiDARMapper:
             self.all_edges = numpy2pcd(edge_points)
             self.all_surfaces = numpy2pcd(surface_points)
         else:
-            TW = TL @ self.trans_world
+            TW = self.trans_world @ TL
 
             edge_points = downsample_points(
                 edge_points[:, :3], self.EDGE_VOXEL_SIZE)
@@ -180,6 +180,7 @@ class LiDARMapper:
             assert False, "only support o3d.geometry.PointCloud"
 
         points = np.asarray(pcd.points)
+        # normalize the d factor -> ax + by + cz + d = 0
         b = -np.ones((self.COVARIANCE_CNT,))
 
         surf_normal = np.linalg.lstsq(points, b, rcond=None)[0]
